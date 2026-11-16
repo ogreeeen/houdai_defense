@@ -6,17 +6,17 @@
 <title>固定砲台ディフェンス</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
-html,body{height:100%;overflow:hidden;background:#070d1c;color:#e8f1ff;font-family:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif}
+html,body{height:100%;overflow:hidden;background:#0a0716;color:#e8f1ff;font-family:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif}
 button{font-family:inherit;border:0;cursor:pointer;color:inherit;background:none}
 .scr{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px}
 .scr.on{display:flex}
-.btn{background:#1d6fff;color:#fff;font-weight:900;font-size:18px;padding:13px 26px;border-radius:14px;box-shadow:0 4px 0 #0b3a9a,0 0 18px rgba(29,111,255,.45)}
+.btn{background:#14b8a6;color:#fff;font-weight:900;font-size:18px;padding:13px 26px;border-radius:14px;box-shadow:0 4px 0 #0b6b61,0 0 18px rgba(20,184,166,.45)}
 .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0b3a9a}
 .btn.red{background:#ff3b5c;box-shadow:0 4px 0 #9a1830,0 0 18px rgba(255,59,92,.4)}
 .btn.ghost{background:#16233f;box-shadow:0 4px 0 #0a1224}
 .btn:disabled{opacity:.4}
 h1{font-size:clamp(30px,8vw,56px);font-weight:900;letter-spacing:.04em;text-align:center;line-height:1.15;
-   color:#fff;text-shadow:0 0 12px #2f8bff,0 0 30px #2f8bff}
+   color:#fff;text-shadow:0 0 12px #2de2c5,0 0 30px #2de2c5}
 h1 small{display:block;font-size:.42em;color:#ff4d6d;text-shadow:0 0 10px #ff2d55;letter-spacing:.3em}
 h2{font-size:22px;text-align:center}
 .note{font-size:14px;color:#9fb3d1;text-align:center;line-height:1.6}
@@ -63,7 +63,7 @@ input{font:inherit;font-size:18px;padding:10px 12px;border-radius:12px;border:2p
 .ub .nm{font-size:12px;font-weight:800}
 .ub .lv{font-size:10px;color:#9fb3d1}
 .ub .c{font-size:13px;font-weight:900;color:#ffd23f}
-.ub.can{border-color:#2f8bff;box-shadow:0 0 8px rgba(47,139,255,.4)}
+.ub.can{border-color:#2de2c5;box-shadow:0 0 8px rgba(45,226,197,.4)}
 .ub.max .c{color:#7ee0a0}
 .ub:disabled{opacity:.45}
 @media (orientation:portrait){ #game{flex-direction:column} #shop{width:100%;height:30%;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr)} }
@@ -219,12 +219,12 @@ const UPG = [
   {id:'nova',   n:'ノヴァ',   ic:'🌟', base:130, max:5},
 ];
 const ENEMY = {
-  grunt:   {hp:22,  sp:13, r:3.6, dmg:5,  rw:3,   col:'#ff4757', shape:'sq'},
-  runner:  {hp:11,  sp:28, r:2.8, dmg:4,  rw:2,   col:'#ffd23f', shape:'tri'},
+  grunt:   {hp:22,  sp:13, r:3.4, dmg:5,  rw:3,   col:'#ff4fa3', shape:'circ'},
+  runner:  {hp:11,  sp:28, r:2.8, dmg:4,  rw:2,   col:'#ffe14d', shape:'tri'},
   tank:    {hp:150, sp:7,  r:7,   dmg:18, rw:14,  col:'#b26bff', shape:'sq2', armor:4},
   splitter:{hp:45,  sp:11, r:5,   dmg:8,  rw:5,   col:'#2ee59d', shape:'dia', split:3},
   mini:    {hp:10,  sp:21, r:2.4, dmg:3,  rw:1,   col:'#2ee59d', shape:'dia'},
-  shooter: {hp:36,  sp:11, r:4,   dmg:6,  rw:6,   col:'#ff9f43', shape:'circ', ranged:{dist:66, cd:2.4, dmg:4}},
+  shooter: {hp:36,  sp:11, r:4,   dmg:6,  rw:6,   col:'#ff9f43', shape:'sq', ranged:{dist:66, cd:2.4, dmg:4}},
   healer:  {hp:45,  sp:10, r:4.5, dmg:5,  rw:7,   col:'#ff6bcb', shape:'cross', heal:{r:22, ps:7}},
   boss:    {hp:1700,sp:4.5,r:14,  dmg:60, rw:150, col:'#ffffff', shape:'boss', spawn:{t:3.5, kind:'grunt'}},
 };
@@ -267,8 +267,8 @@ const cost = u => Math.round(u.base * Math.pow(1.45, G.lv[u.id]));
 // ================= タイトル =================
 function drawTitleBg(){
   const c = $('bg'), x = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
-  x.fillStyle = '#070d1c'; x.fillRect(0, 0, c.width, c.height);
-  x.strokeStyle = 'rgba(47,139,255,.08)'; x.lineWidth = 1;
+  x.fillStyle = '#0a0716'; x.fillRect(0, 0, c.width, c.height);
+  x.strokeStyle = 'rgba(160,140,255,.07)'; x.lineWidth = 1;
   for (let i = 0; i < c.width; i += 28){ x.beginPath(); x.moveTo(i, 0); x.lineTo(i, c.height); x.stroke(); }
   for (let i = 0; i < c.height; i += 28){ x.beginPath(); x.moveTo(0, i); x.lineTo(c.width, i); x.stroke(); }
 }
@@ -421,10 +421,12 @@ function resize(){
   gridCv = document.createElement('canvas'); gridCv.width = cv.width; gridCv.height = cv.height;
   const g = gridCv.getContext('2d'); g.scale(dpr, dpr);
   const bgG = g.createRadialGradient(W/2, H/2, 10, W/2, H/2, Math.hypot(W, H)/2);
-  bgG.addColorStop(0, '#13233f'); bgG.addColorStop(1, '#070d1c'); g.fillStyle = bgG; g.fillRect(0, 0, W, H);
-  g.strokeStyle = 'rgba(80,140,255,.07)'; g.lineWidth = 1; const st = 10 * U;
-  for (let x = W/2 % st; x < W; x += st){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
-  for (let y = H/2 % st; y < H; y += st){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  bgG.addColorStop(0, '#1d1640'); bgG.addColorStop(1, '#0a0716'); g.fillStyle = bgG; g.fillRect(0, 0, W, H);
+  // 点の格子と、同心円のガイド
+  g.fillStyle = 'rgba(160,140,255,.16)'; const st = 12 * U;
+  for (let x = W/2 % st; x < W; x += st) for (let y = H/2 % st; y < H; y += st) g.fillRect(x - 1, y - 1, 2, 2);
+  g.strokeStyle = 'rgba(160,140,255,.06)'; g.lineWidth = 1;
+  for (let r = 40; r < 200; r += 40){ g.beginPath(); g.arc(W/2, H/2, r * U, 0, Math.PI * 2); g.stroke(); }
 }
 addEventListener('resize', () => { if ($('game').classList.contains('on')) resize(); });
 const spawnDist = () => Math.hypot(W, H) / 2 / U + 8;
@@ -606,7 +608,7 @@ function waveClear(){
 }
 function gameOver(){
   G.over = true; G.running = false; S.over();
-  burst(0, 0, '#4da3ff', 80, 2.5); G.shake = 1.5;
+  burst(0, 0, '#2de2c5', 80, 2.5); G.shake = 1.5;
   banner('DESTROYED', `WAVE ${G.wave} で砲台がこわれた…`);
   setTimeout(() => finishDefense(false), 2200);
 }
@@ -658,7 +660,7 @@ function buy(id){
   if (G.over || G.lv[id] >= u.max || G.money < c) return;
   G.money -= c; G.lv[id]++; S.buy();
   if (id === 'hp'){ const old = G.maxHp; G.maxHp = Math.round(100 * Math.pow(1.22, G.lv.hp)); G.hp = Math.min(G.maxHp, G.hp + (G.maxHp - old) + G.maxHp * .1); }
-  burst(0, 0, '#4da3ff', 14, .8);
+  burst(0, 0, '#2de2c5', 14, .8);
   renderShop(); hud();
 }
 let shopSig = '';
@@ -695,8 +697,8 @@ function draw(){
   ctx.save(); ctx.translate(W/2 + (R() - .5) * sh, H/2 + (R() - .5) * sh); ctx.scale(U, U);
   // 射程
   ctx.beginPath(); ctx.arc(0, 0, st.range, 0, Math.PI * 2);
-  ctx.fillStyle = st.slow ? 'rgba(120,200,255,.07)' : 'rgba(47,139,255,.05)'; ctx.fill();
-  ctx.strokeStyle = 'rgba(77,163,255,.35)'; ctx.lineWidth = .5; ctx.stroke();
+  ctx.fillStyle = st.slow ? 'rgba(120,230,255,.07)' : 'rgba(45,226,197,.04)'; ctx.fill();
+  ctx.setLineDash([2, 3]); ctx.lineDashOffset = -G.t * 4; ctx.strokeStyle = 'rgba(45,226,197,.45)'; ctx.lineWidth = .6; ctx.stroke(); ctx.setLineDash([]);
   // 敵
   for (const e of G.enemies){
     const fl = e.flash > 0;
@@ -733,11 +735,13 @@ function draw(){
   }
   // 砲台
   const hpR = G.hp / G.maxHp;
-  poly(0, 0, CORE_R, 6, Math.PI / 6); ctx.fillStyle = '#0d1b36'; ctx.fill(); neon(hpR > .3 ? '#4da3ff' : '#ff4d6d', 1.1);
-  poly(0, 0, CORE_R * .55, 6, Math.PI / 6 + G.t * .5); ctx.strokeStyle = 'rgba(77,163,255,.5)'; ctx.lineWidth = .5; ctx.stroke();
+  const cc = hpR > .3 ? '#2de2c5' : '#ff4d6d';
+  ctx.beginPath(); ctx.arc(0, 0, CORE_R, 0, Math.PI * 2); ctx.fillStyle = '#120d2b'; ctx.fill(); neon(cc, 1.1);
+  for (let i = 0; i < 3; i++){ const a = G.t * -.8 + i * Math.PI * 2 / 3; poly(Math.cos(a) * CORE_R * 1.25, Math.sin(a) * CORE_R * 1.25, 1.8, 3, a); ctx.fillStyle = cc; ctx.fill(); }
+  const pul = .55 + Math.sin(G.t * 3) * .08; ctx.beginPath(); ctx.arc(0, 0, CORE_R * pul, 0, Math.PI * 2); ctx.fillStyle = 'rgba(45,226,197,.25)'; ctx.fill();
   ctx.save(); ctx.rotate(G.angle);
   const barrels = Math.min(3, st.multi);
-  for (let i = 0; i < barrels; i++){ const o = (i - (barrels - 1) / 2) * 2.4; ctx.fillStyle = '#e8f1ff'; ctx.fillRect(3, o - 1, 9 + G.lv.dmg * .2, 2); }
+  for (let i = 0; i < barrels; i++){ const o = (i - (barrels - 1) / 2) * 2.4; ctx.fillStyle = '#d9fff7'; ctx.fillRect(3, o - .9, 9 + G.lv.dmg * .2, 1.8); ctx.fillStyle = '#2de2c5'; ctx.fillRect(10 + G.lv.dmg * .2, o - 1.3, 2, 2.6); }
   ctx.restore();
   // HPバー
   const bw = 26; ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(-bw/2, -CORE_R - 7, bw, 2.6);
