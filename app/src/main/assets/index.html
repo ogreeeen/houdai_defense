@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>固定砲台ディフェンス</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{height:100%;overflow:hidden;background:#070d1c;color:#e8f1ff;font-family:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif}
+button{font-family:inherit;border:0;cursor:pointer;color:inherit;background:none}
+.scr{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px}
+.scr.on{display:flex}
+.btn{background:#1d6fff;color:#fff;font-weight:900;font-size:18px;padding:13px 26px;border-radius:14px;box-shadow:0 4px 0 #0b3a9a,0 0 18px rgba(29,111,255,.45)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #0b3a9a}
+.btn.red{background:#ff3b5c;box-shadow:0 4px 0 #9a1830,0 0 18px rgba(255,59,92,.4)}
+.btn.ghost{background:#16233f;box-shadow:0 4px 0 #0a1224}
+.btn:disabled{opacity:.4}
+h1{font-size:clamp(30px,8vw,56px);font-weight:900;letter-spacing:.04em;text-align:center;line-height:1.15;
+   color:#fff;text-shadow:0 0 12px #2f8bff,0 0 30px #2f8bff}
+h1 small{display:block;font-size:.42em;color:#ff4d6d;text-shadow:0 0 10px #ff2d55;letter-spacing:.3em}
+h2{font-size:22px;text-align:center}
+.note{font-size:14px;color:#9fb3d1;text-align:center;line-height:1.6}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center}
+input{font:inherit;font-size:18px;padding:10px 12px;border-radius:12px;border:2px solid #2a3d63;background:#0d1730;color:#fff;width:170px;text-align:center}
+#bg{position:fixed;inset:0;z-index:-1}
+/* 作戦を選ぶ画面 */
+#plan{justify-content:flex-start;padding:10px 12px;gap:8px;overflow:hidden}
+#plan .head{width:100%;max-width:900px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+#plan .head b{font-size:18px}
+.budget{font-weight:900;font-size:20px;color:#ffd23f;white-space:nowrap}
+.budget small{font-size:13px;color:#9fb3d1;font-weight:700}
+#cards{width:100%;max-width:900px;flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;align-content:start}
+.tc{background:#0f1c38;border:2px solid #24375e;border-radius:14px;padding:8px 10px;display:flex;flex-direction:column;gap:4px}
+.tc.on{border-color:#ff4d6d;box-shadow:0 0 12px rgba(255,77,109,.35)}
+.tc .t{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:15px}
+.tc .t span{color:#ffd23f;font-size:13px}
+.tc .d{font-size:12px;color:#9fb3d1;line-height:1.35;min-height:2.7em}
+.tc .ctl{display:flex;align-items:center;justify-content:space-between}
+.tc .ctl button{width:38px;height:34px;border-radius:10px;background:#1b2b4f;font-size:20px;font-weight:900}
+.tc .ctl b{font-size:20px}
+.opts{width:100%;max-width:900px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.seg{display:flex;border-radius:12px;overflow:hidden;border:2px solid #24375e}
+.seg button{padding:7px 10px;font-size:13px;font-weight:800;background:#0f1c38;color:#9fb3d1}
+.seg button.on{background:#ff4d6d;color:#fff}
+.tog{padding:7px 10px;font-size:13px;font-weight:800;border-radius:12px;border:2px solid #24375e;background:#0f1c38;color:#9fb3d1}
+.tog.on{background:#ff4d6d;border-color:#ff4d6d;color:#fff}
+/* ゲーム画面 */
+#game{padding:0;gap:0;flex-direction:column}
+#field{position:relative;flex:1;min-height:0;min-width:0;align-self:stretch}
+#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#hud{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;gap:10px;padding:8px 10px;pointer-events:none}
+#hud .wv{font-weight:900;font-size:20px;text-shadow:0 0 8px #000}
+#hud .money{font-weight:900;font-size:20px;color:#ffd23f;text-shadow:0 0 8px rgba(255,210,63,.5)}
+#hud .sp{flex:1}
+#hud button{pointer-events:auto;background:rgba(20,35,65,.85);border:2px solid #2a3d63;border-radius:10px;padding:5px 10px;font-weight:900;font-size:15px}
+#nova{position:absolute;right:12px;bottom:12px;width:74px;height:74px;border-radius:50%;background:radial-gradient(#ffe58a,#ff9f1c);color:#3b1d00;font-weight:900;font-size:13px;box-shadow:0 0 22px rgba(255,190,60,.7);display:none}
+#nova.on{display:block}
+#nova:disabled{filter:grayscale(.9) brightness(.6);box-shadow:none}
+#nova i{display:block;font-style:normal;font-size:24px;line-height:1}
+#shop{display:grid;gap:6px;padding:6px;background:#0a1328;border-top:2px solid #1c2c4f}
+.ub{background:#13213f;border:2px solid #24375e;border-radius:12px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;min-height:0;overflow:hidden}
+.ub .ic{font-size:20px}
+.ub .nm{font-size:12px;font-weight:800}
+.ub .lv{font-size:10px;color:#9fb3d1}
+.ub .c{font-size:13px;font-weight:900;color:#ffd23f}
+.ub.can{border-color:#2f8bff;box-shadow:0 0 8px rgba(47,139,255,.4)}
+.ub.max .c{color:#7ee0a0}
+.ub:disabled{opacity:.45}
+@media (orientation:portrait){ #game{flex-direction:column} #shop{width:100%;height:30%;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr)} }
+@media (orientation:landscape){ #game{flex-direction:row} #shop{height:100%;width:34%;max-width:330px;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr);border-top:0;border-left:2px solid #1c2c4f} }
+/* お知らせ・カード */
+.ov{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:5;pointer-events:none}
+.ov.on{display:flex}
+.card{pointer-events:auto;background:rgba(10,19,40,.94);border:2px solid #2a3d63;border-radius:20px;padding:18px 22px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;max-width:90%}
+.card h2{font-size:24px}
+.card .tac{font-size:15px;color:#ffb3c1;font-weight:800;line-height:1.5}
+#banner{position:absolute;left:0;right:0;top:34%;text-align:center;pointer-events:none;opacity:0;transition:opacity .3s}
+#banner.on{opacity:1}
+#banner b{display:block;font-size:clamp(34px,9vw,64px);font-weight:900;color:#fff;text-shadow:0 0 14px #ff2d55,0 0 30px #ff2d55}
+#banner span{display:inline-block;margin-top:6px;font-size:16px;font-weight:800;background:rgba(10,19,40,.85);border-radius:12px;padding:6px 14px;color:#ffb3c1}
+#res .score{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+#res .pc{background:#0f1c38;border:2px solid #24375e;border-radius:16px;padding:14px 18px;min-width:150px;text-align:center}
+#res .pc.win{border-color:#ffd23f;box-shadow:0 0 18px rgba(255,210,63,.4)}
+#res .pc b{font-size:22px;display:block}
+#res .pc span{font-size:14px;color:#9fb3d1;line-height:1.6}
+.how{max-width:560px;font-size:14px;line-height:1.7;color:#c9d7ee;background:#0f1c38;border-radius:14px;padding:12px 16px}
+.how b{color:#ffd23f}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<section class="scr on" id="title">
+  <h1><small>FORTRESS</small>固定砲台<br>ディフェンス</h1>
+  <p class="note">まんなかの砲台をどんどん強化して、押し寄せる敵を守りきれ！</p>
+  <div class="row"><button class="btn" id="b1p">ひとりで遊ぶ</button><button class="btn red" id="bvs">ふたりで対戦</button></div>
+  <button class="btn ghost" id="bhow">あそびかた</button>
+  <p class="note" id="best"></p>
+</section>
+
+<section class="scr" id="how">
+  <h2>あそびかた</h2>
+  <div class="how">
+    <b>守る人</b>：砲台は自動で撃ちます。敵をたおしてお金をため、下のボタンで強化しよう。
+    ノヴァ（🌟）を買うと、まわりの敵をまとめて吹き飛ばす必殺技が使えます。<br>
+    <b>攻める人</b>：毎ウェーブ、ポイントを使って作戦を選びます。使い残したポイントは次に持ち越せます。
+    どの方向から、どのタイミングで攻めるかも選べます。<br>
+    <b>ひとりで遊ぶ</b>：10ウェーブ守りきればクリア。次の敵の作戦が先に見えます。<br>
+    <b>ふたりで対戦</b>：5ウェーブずつ攻守を交代。より長く、より多くHPを残して守った人の勝ち。
+  </div>
+  <button class="btn" id="howBack">もどる</button>
+</section>
+
+<section class="scr" id="names">
+  <h2>ふたりの名前</h2>
+  <div class="row"><input id="n1" maxlength="8" placeholder="プレイヤー1"><input id="n2" maxlength="8" placeholder="プレイヤー2"></div>
+  <p class="note">さいしょは <b id="atkName">プレイヤー1</b> が攻めて、もうひとりが守ります。<br>5ウェーブ終わったら交代！</p>
+  <div class="row"><button class="btn ghost" id="nmBack">もどる</button><button class="btn red" id="nmGo">はじめる</button></div>
+</section>
+
+<section class="scr" id="plan">
+  <div class="head">
+    <b id="plTitle"></b>
+    <div class="budget">のこり <span id="plLeft">0</span><small> / <span id="plAll">0</span>pt</small></div>
+  </div>
+  <div class="opts">
+    <div class="seg" id="dirSeg"><button data-v="all" class="on">全方位</button><button data-v="one">一点突破 +1</button><button data-v="pincer">挟み撃ち +1</button></div>
+    <button class="tog" id="tRush">一斉突撃 +2</button>
+    <button class="tog" id="tRage">狂暴化 +2</button>
+    <button class="tog" id="tArmor">装甲強化 +3</button>
+  </div>
+  <div id="cards"></div>
+  <div class="row"><span class="note" style="font-size:12px">使わなかったポイントは次のウェーブに持ち越せます</span><button class="btn red" id="plGo">この作戦でいく</button></div>
+</section>
+
+<section class="scr" id="pass">
+  <h2 id="psH"></h2>
+  <p class="note" id="psN"></p>
+  <button class="btn" id="psGo">わたした！</button>
+</section>
+
+<section class="scr" id="game">
+  <div id="field">
+    <canvas id="cv"></canvas>
+    <div id="hud">
+      <span class="wv" id="hWave">WAVE 1</span><span class="money" id="hMoney">💰 0</span><span class="sp"></span>
+      <button id="hSpeed">▶ ×1</button><button id="hQuit">✕</button>
+    </div>
+    <button id="nova"><i>🌟</i><span id="novaT">ノヴァ</span></button>
+    <div id="banner"><b id="bnB"></b><span id="bnS"></span></div>
+    <div class="ov" id="prep"><div class="card">
+      <h2 id="prH"></h2>
+      <div class="tac" id="prT"></div>
+      <p class="note" id="prN">強化してから スタート！</p>
+      <button class="btn red" id="prGo">スタート</button>
+    </div></div>
+  </div>
+  <div id="shop"></div>
+</section>
+
+<section class="scr" id="res">
+  <h1 id="rsH" style="font-size:clamp(28px,7vw,48px)"></h1>
+  <div class="score" id="rsS"></div>
+  <p class="note" id="rsN"></p>
+  <div class="row"><button class="btn" id="rsAgain">もう一回</button><button class="btn ghost" id="rsTop">タイトルへ</button></div>
+</section>
+
+<script>
+const $ = id => document.getElementById(id);
+const R = Math.random;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function show(id){ document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.id === id)); if (id === 'game') resize(); }
+const store = { get(k, d){ try { const v = localStorage.getItem('hd_' + k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
+                set(k, v){ try { localStorage.setItem('hd_' + k, JSON.stringify(v)); } catch(e){} } };
+
+// ================= 音 =================
+let AC = null, lastShot = 0;
+function snd(f, d, type='square', v=.08, slide=0, t0=0){
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + t0;
+    o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f * slide), t + d);
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0005, t + d);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d + .02);
+  } catch(e){}
+}
+function noise(d, v=.15){
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const b = AC.createBuffer(1, AC.sampleRate * d, AC.sampleRate), a = b.getChannelData(0);
+    for (let i = 0; i < a.length; i++) a[i] = (R() * 2 - 1) * Math.pow(1 - i / a.length, 2);
+    const s = AC.createBufferSource(), g = AC.createGain(); s.buffer = b; g.gain.value = v; s.connect(g); g.connect(AC.destination); s.start();
+  } catch(e){}
+}
+const S = {
+  shot(){ const n = performance.now(); if (n - lastShot < 70) return; lastShot = n; snd(880, .05, 'square', .025, .5); },
+  boom(){ noise(.25, .12); },
+  hurt(){ snd(120, .25, 'sawtooth', .12, .5); },
+  buy(){ snd(660, .08, 'triangle', .12); snd(990, .12, 'triangle', .12, 1, .07); },
+  wave(){ [330, 440, 554].forEach((f, i) => snd(f, .25, 'sawtooth', .06, 1, i * .1)); },
+  clear(){ [523, 659, 784, 1046].forEach((f, i) => snd(f, .25, 'triangle', .12, 1, i * .09)); },
+  nova(){ snd(200, .8, 'sawtooth', .15, 6); noise(.6, .18); },
+  over(){ [392, 330, 262, 196].forEach((f, i) => snd(f, .35, 'triangle', .14, 1, i * .16)); },
+};
+
+// ================= データ =================
+const UPG = [
+  {id:'dmg',    n:'攻撃力',   ic:'💥', base:20,  max:20},
+  {id:'rate',   n:'連射',     ic:'⚡', base:25,  max:15},
+  {id:'range',  n:'射程',     ic:'🎯', base:30,  max:8},
+  {id:'multi',  n:'マルチ砲', ic:'🔱', base:90,  max:5},
+  {id:'pierce', n:'貫通弾',   ic:'🗡️', base:55,  max:5},
+  {id:'blast',  n:'爆発弾',   ic:'💣', base:65,  max:6},
+  {id:'crit',   n:'会心',     ic:'✨', base:40,  max:8},
+  {id:'slow',   n:'冷気',     ic:'❄️', base:50,  max:6},
+  {id:'drone',  n:'ドローン', ic:'🛸', base:100, max:6},
+  {id:'hp',     n:'装甲',     ic:'🛡️', base:30,  max:12},
+  {id:'regen',  n:'修理',     ic:'🔧', base:40,  max:8},
+  {id:'nova',   n:'ノヴァ',   ic:'🌟', base:130, max:5},
+];
+const ENEMY = {
+  grunt:   {hp:22,  sp:13, r:3.6, dmg:5,  rw:3,   col:'#ff4757', shape:'sq'},
+  runner:  {hp:11,  sp:28, r:2.8, dmg:4,  rw:2,   col:'#ffd23f', shape:'tri'},
+  tank:    {hp:150, sp:7,  r:7,   dmg:18, rw:14,  col:'#b26bff', shape:'sq2', armor:4},
+  splitter:{hp:45,  sp:11, r:5,   dmg:8,  rw:5,   col:'#2ee59d', shape:'dia', split:3},
+  mini:    {hp:10,  sp:21, r:2.4, dmg:3,  rw:1,   col:'#2ee59d', shape:'dia'},
+  shooter: {hp:36,  sp:11, r:4,   dmg:6,  rw:6,   col:'#ff9f43', shape:'circ', ranged:{dist:66, cd:2.4, dmg:4}},
+  healer:  {hp:45,  sp:10, r:4.5, dmg:5,  rw:7,   col:'#ff6bcb', shape:'cross', heal:{r:22, ps:7}},
+  boss:    {hp:1700,sp:4.5,r:14,  dmg:60, rw:150, col:'#ffffff', shape:'boss', spawn:{t:3.5, kind:'grunt'}},
+};
+const TACT = [
+  {id:'mass',  n:'物量作戦',     d:'ふつうの兵 20体で押しつぶす',          cost:3, units:[['grunt',20]]},
+  {id:'blitz', n:'電撃戦',       d:'足の速い兵 18体が一気に迫る',          cost:3, units:[['runner',18]]},
+  {id:'heavy', n:'重装甲部隊',   d:'かたい戦車 5体。弱い弾はほぼ効かない', cost:4, units:[['tank',5]]},
+  {id:'virus', n:'分裂ウイルス', d:'たおすと3つに分かれる ×10',           cost:4, units:[['splitter',10]]},
+  {id:'arty',  n:'砲撃部隊',     d:'遠くから砲台を撃ってくる ×6',         cost:4, units:[['shooter',6]]},
+  {id:'medic', n:'衛生兵',       d:'まわりの味方を回復する ×4',            cost:3, units:[['healer',4]]},
+  {id:'boss',  n:'ボス投入',     d:'超巨大ボス。手下を呼び続ける',          cost:9, units:[['boss',1]]},
+];
+const MODS = {dir:{all:0, one:1, pincer:1}, rush:2, rage:2, armor:3};
+const DIRN = {all:'全方位', one:'一点突破', pincer:'挟み撃ち'};
+const gain = w => 4 + 3 * (w - 1) + (mode === '1p' && w > 5 ? 3 * (w - 5) : 0);
+
+// ================= 試合の状態 =================
+let mode = '1p', MAXW = 10;
+let M = null;      // 対戦の情報
+let G = null;      // ゲームの状態
+let plan = null;   // 攻める作戦
+
+function newDefense(){
+  return {wave:0, money:100, lv:Object.fromEntries(UPG.map(u => [u.id, 0])), hp:100, maxHp:100,
+          enemies:[], bullets:[], ebullets:[], parts:[], texts:[], rings:[], queue:[], t:0, running:false,
+          angle:-Math.PI/2, cd:0, novaCd:0, kills:0, shake:0, dronePh:0, plan:null, over:false, bank:0};
+}
+const lvOf = id => G.lv[id];
+function stats(){
+  const L = G.lv;
+  return {
+    dmg: 10 * Math.pow(1.3, L.dmg), rate: 2.5 * Math.pow(1.2, L.rate), range: 62 + 6 * L.range,
+    multi: 1 + L.multi, pierce: L.pierce, blast: L.blast ? 6 + 3 * L.blast : 0, crit: .06 * L.crit,
+    slow: .07 * L.slow, drones: L.drone, regen: .004 * L.regen,
+    novaDmg: L.nova ? 140 * Math.pow(1.55, L.nova - 1) : 0, novaCd: 26 - 2 * L.nova,
+  };
+}
+const cost = u => Math.round(u.base * Math.pow(1.45, G.lv[u.id]));
+
+// ================= タイトル =================
+function drawTitleBg(){
+  const c = $('bg'), x = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
+  x.fillStyle = '#070d1c'; x.fillRect(0, 0, c.width, c.height);
+  x.strokeStyle = 'rgba(47,139,255,.08)'; x.lineWidth = 1;
+  for (let i = 0; i < c.width; i += 28){ x.beginPath(); x.moveTo(i, 0); x.lineTo(i, c.height); x.stroke(); }
+  for (let i = 0; i < c.height; i += 28){ x.beginPath(); x.moveTo(0, i); x.lineTo(c.width, i); x.stroke(); }
+}
+drawTitleBg(); addEventListener('resize', drawTitleBg);
+function showBest(){ const b = store.get('best', null); $('best').textContent = b ? `ひとりで遊ぶ さいこう記録：${b.clear ? '全10ウェーブクリア！' : `WAVE ${b.wave}`}（${b.kills}体撃破）` : ''; }
+showBest();
+$('bhow').onclick = () => show('how');
+$('howBack').onclick = () => show('title');
+$('b1p').onclick = () => { mode = '1p'; MAXW = 10; M = null; G = newDefense(); nextWave1p(); };
+$('bvs').onclick = () => { $('n1').value = store.get('n1', ''); $('n2').value = store.get('n2', ''); updAtkName(); show('names'); };
+$('n1').oninput = updAtkName;
+function updAtkName(){ $('atkName').textContent = $('n1').value.trim() || 'プレイヤー1'; }
+$('nmBack').onclick = () => show('title');
+$('nmGo').onclick = () => {
+  const a = $('n1').value.trim() || 'プレイヤー1', b = $('n2').value.trim() || 'プレイヤー2';
+  store.set('n1', $('n1').value.trim()); store.set('n2', $('n2').value.trim());
+  mode = 'vs'; MAXW = 5; M = {names:[a, b], round:0, res:[]};
+  startRound();
+};
+function atkName(){ return M.names[M.round]; }
+function defName(){ return M.names[1 - M.round]; }
+function startRound(){
+  G = newDefense();
+  passTo(atkName(), `<b>${atkName()}</b> が攻める番です。<br>${defName()} には画面を見せないでね。`, () => openPlan());
+}
+
+// ================= 作戦を選ぶ =================
+function emptyPlan(){ return {cnt:Object.fromEntries(TACT.map(t => [t.id, 0])), dir:'all', rush:false, rage:false, armor:false}; }
+function planCost(p){
+  let c = MODS.dir[p.dir] + (p.rush ? MODS.rush : 0) + (p.rage ? MODS.rage : 0) + (p.armor ? MODS.armor : 0);
+  TACT.forEach(t => c += t.cost * p.cnt[t.id]); return c;
+}
+function planUnits(p){ return TACT.reduce((s, t) => s + p.cnt[t.id], 0); }
+function openPlan(){
+  const w = G.wave + 1;
+  G.bank += gain(w);
+  plan = emptyPlan();
+  $('plTitle').textContent = `${atkName()} の作戦　WAVE ${w} / ${MAXW}`;
+  renderPlan(); show('plan');
+}
+function renderPlan(){
+  const all = G.bank, used = planCost(plan);
+  $('plAll').textContent = all; $('plLeft').textContent = all - used;
+  $('cards').innerHTML = TACT.map(t => `<div class="tc ${plan.cnt[t.id] ? 'on' : ''}">
+    <div class="t">${t.n}<span>${t.cost}pt</span></div><div class="d">${t.d}</div>
+    <div class="ctl"><button data-a="-" data-id="${t.id}">−</button><b>${plan.cnt[t.id]}</b><button data-a="+" data-id="${t.id}">＋</button></div></div>`).join('');
+  $('cards').querySelectorAll('button').forEach(b => b.onclick = () => {
+    const id = b.dataset.id, t = TACT.find(q => q.id === id);
+    if (b.dataset.a === '+'){ if (planCost(plan) + t.cost <= G.bank) plan.cnt[id]++; else bump(); }
+    else if (plan.cnt[id] > 0) plan.cnt[id]--;
+    renderPlan();
+  });
+  document.querySelectorAll('#dirSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === plan.dir));
+  $('tRush').classList.toggle('on', plan.rush); $('tRage').classList.toggle('on', plan.rage); $('tArmor').classList.toggle('on', plan.armor);
+  $('plGo').disabled = planUnits(plan) === 0;
+}
+function bump(){ snd(140, .12, 'square', .08); const e = $('plLeft').parentNode; e.style.color = '#ff4d6d'; setTimeout(() => e.style.color = '', 250); }
+function tryMod(fn){ const bak = JSON.stringify(plan); fn(); if (planCost(plan) > G.bank){ plan = JSON.parse(bak); bump(); } renderPlan(); }
+document.querySelectorAll('#dirSeg button').forEach(b => b.onclick = () => tryMod(() => plan.dir = b.dataset.v));
+$('tRush').onclick = () => tryMod(() => plan.rush = !plan.rush);
+$('tRage').onclick = () => tryMod(() => plan.rage = !plan.rage);
+$('tArmor').onclick = () => tryMod(() => plan.armor = !plan.armor);
+$('plGo').onclick = () => {
+  G.bank -= planCost(plan); G.plan = plan;
+  passTo(defName(), `<b>${defName()}</b> が守る番です。<br>攻めた人は画面を見ないでね。`, () => enterPrep());
+};
+function planText(p){
+  const parts = TACT.filter(t => p.cnt[t.id]).map(t => t.n + (p.cnt[t.id] > 1 ? `×${p.cnt[t.id]}` : ''));
+  const mods = [DIRN[p.dir]]; if (p.rush) mods.push('一斉突撃'); if (p.rage) mods.push('狂暴化'); if (p.armor) mods.push('装甲強化');
+  return parts.join('・') + '　／　' + mods.join('・');
+}
+// CPU の作戦（ひとりで遊ぶ）
+function cpuPlan(w){
+  const p = emptyPlan(); let b = G.bank;
+  const pickMod = (key, val, c, chance) => { if (b >= c + 3 && R() < chance){ p[key] = val; b -= c; } };
+  if (w >= 3) pickMod('dir', R() < .5 ? 'one' : 'pincer', 1, .55);
+  if (w >= 4) pickMod('rush', true, 2, .35);
+  if (w >= 6) pickMod('rage', true, 2, .3);
+  if (w >= 7) pickMod('armor', true, 3, .35);
+  if (w % 5 === 0 && b >= 9){ p.cnt.boss++; b -= 9; }
+  const pool = TACT.filter(t => t.id !== 'boss' && (w >= 2 || ['mass', 'blitz'].includes(t.id)) && (w >= 3 || !['heavy', 'arty'].includes(t.id)));
+  let guard = 50;
+  while (b >= 3 && guard--){
+    const t = pool[Math.floor(R() * pool.length)];
+    if (t.cost <= b){ p.cnt[t.id]++; b -= t.cost; }
+  }
+  G.bank = b; return p;
+}
+
+// ================= わたす画面 =================
+let passCb = null;
+function passTo(name, html, cb){
+  $('psH').textContent = `📱 ${name} にスマホをわたしてね`;
+  $('psN').innerHTML = html; passCb = cb; show('pass');
+}
+$('psGo').onclick = () => { const f = passCb; passCb = null; f && f(); };
+
+// ================= ウェーブ準備 =================
+function nextWave1p(){
+  const w = G.wave + 1;
+  G.bank += gain(w); G.plan = cpuPlan(w);
+  enterPrep();
+}
+function enterPrep(){
+  show('game'); G.running = false;
+  const w = G.wave + 1;
+  $('prH').textContent = `WAVE ${w} / ${MAXW}`;
+  if (mode === '1p'){ $('prT').textContent = '次の敵の作戦：' + planText(G.plan); $('prN').textContent = '強化してから スタート！'; }
+  else { $('prT').textContent = '敵の作戦は… はじまるまでナイショ'; $('prN').textContent = `${defName()}：強化してから スタート！`; }
+  $('prep').classList.add('on');
+  renderShop(); hud();
+  if (!loopOn){ loopOn = true; last = performance.now(); requestAnimationFrame(loop); }
+}
+$('prGo').onclick = () => { $('prep').classList.remove('on'); startWave(); };
+
+function startWave(){
+  G.wave++; const p = G.plan, w = G.wave;
+  // 出てくる敵のリスト
+  const list = [];
+  TACT.forEach(t => { for (let k = 0; k < p.cnt[t.id]; k++) t.units.forEach(([kind, n]) => { for (let i = 0; i < n; i++) list.push(kind); }); });
+  for (let i = list.length - 1; i > 0; i--){ const j = Math.floor(R() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+  // ボスは後半に
+  list.sort((a, b) => (a === 'boss') - (b === 'boss'));
+  const span = p.rush ? 5 : clamp(list.length * .55, 12, 36);
+  const a0 = R() * Math.PI * 2;
+  const hpMul = (1 + (mode === '1p' ? .13 : .1) * (w - 1)) * (p.armor ? 1.5 : 1), spMul = p.rage ? 1.35 : 1;
+  G.queue = list.map((kind, i) => {
+    let ang;
+    if (p.dir === 'one') ang = a0 + (R() - .5) * .5;
+    else if (p.dir === 'pincer') ang = a0 + (R() < .5 ? 0 : Math.PI) + (R() - .5) * .4;
+    else ang = R() * Math.PI * 2;
+    const at = kind === 'boss' ? span * .5 : (i / Math.max(1, list.length - 1)) * span * (.85 + R() * .15);
+    return {kind, at, ang, hpMul, spMul};
+  }).sort((a, b) => a.at - b.at);
+  G.t = 0; G.running = true; G.novaCd = Math.min(G.novaCd, 3);
+  banner(`WAVE ${w}`, planText(p)); S.wave();
+  renderShop(); hud();
+}
+let bannerT = 0;
+function banner(b, s){ $('bnB').textContent = b; $('bnS').textContent = s; $('banner').classList.add('on'); clearTimeout(bannerT); bannerT = setTimeout(() => $('banner').classList.remove('on'), 2600); }
+
+// ================= 画面の大きさ =================
+const cv = $('cv'), ctx = cv.getContext('2d');
+let W = 0, H = 0, U = 1, dpr = 1, gridCv = null;
+function resize(){
+  const r = cv.getBoundingClientRect(); dpr = Math.min(2, devicePixelRatio || 1);
+  W = r.width; H = r.height; if (!W || !H) return;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  U = Math.min(W, H) / 200;
+  gridCv = document.createElement('canvas'); gridCv.width = cv.width; gridCv.height = cv.height;
+  const g = gridCv.getContext('2d'); g.scale(dpr, dpr);
+  const bgG = g.createRadialGradient(W/2, H/2, 10, W/2, H/2, Math.hypot(W, H)/2);
+  bgG.addColorStop(0, '#13233f'); bgG.addColorStop(1, '#070d1c'); g.fillStyle = bgG; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(80,140,255,.07)'; g.lineWidth = 1; const st = 10 * U;
+  for (let x = W/2 % st; x < W; x += st){ g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (let y = H/2 % st; y < H; y += st){ g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+}
+addEventListener('resize', () => { if ($('game').classList.contains('on')) resize(); });
+const spawnDist = () => Math.hypot(W, H) / 2 / U + 8;
+
+// ================= 敵 =================
+function addEnemy(kind, x, y, hpMul, spMul){
+  const d = ENEMY[kind];
+  const e = {kind, x, y, hp:d.hp * hpMul, max:d.hp * hpMul, sp:d.sp * spMul * (.9 + R() * .2), r:d.r, d, cd: d.ranged ? 1 + R() : 0,
+             scd: d.spawn ? d.spawn.t : 0, hpMul, spMul, flash:0, rot:R() * 6, dcd:0, hit:0};
+  G.enemies.push(e); return e;
+}
+function damage(e, amt, crit){
+  if (e.dead) return;
+  if (e.d.armor) amt = Math.max(amt * .15, amt - e.d.armor);
+  e.hp -= amt; e.flash = .08;
+  if (crit || amt >= 40) text(e.x, e.y - e.r, Math.round(amt), crit ? '#ffd23f' : '#fff', crit ? 1.3 : 1);
+  if (e.hp <= 0) kill(e);
+}
+function kill(e){
+  e.dead = true; G.kills++; G.money += e.d.rw;
+  burst(e.x, e.y, e.d.col, e.kind === 'boss' ? 60 : 10, e.kind === 'boss' ? 2.5 : 1);
+  if (e.kind === 'boss'){ S.boom(); G.shake = 1; G.rings.push({x:e.x, y:e.y, r:0, max:60, col:'#ffffff', t:0}); }
+  if (e.d.split) for (let i = 0; i < e.d.split; i++){
+    const a = R() * Math.PI * 2; addEnemy('mini', e.x + Math.cos(a) * 4, e.y + Math.sin(a) * 4, e.hpMul, e.spMul);
+  }
+}
+function text(x, y, s, col, sc=1){ if (G.texts.length < 40) G.texts.push({x, y, s, col, t:0, sc}); }
+function burst(x, y, col, n, sp=1){
+  for (let i = 0; i < n && G.parts.length < 500; i++){
+    const a = R() * Math.PI * 2, v = (15 + R() * 45) * sp;
+    G.parts.push({x, y, vx:Math.cos(a) * v, vy:Math.sin(a) * v, t:0, life:.35 + R() * .4, col, s:.8 + R() * 1.3});
+  }
+}
+
+// ================= 1コマ進める =================
+const CORE_R = 9;
+function step(dt){
+  if (!G.running) { tickFx(dt); return; }
+  const st = stats();
+  G.t += dt;
+  // 出現
+  const sd = spawnDist();
+  while (G.queue.length && G.queue[0].at <= G.t){
+    const q = G.queue.shift();
+    addEnemy(q.kind, Math.cos(q.ang) * sd, Math.sin(q.ang) * sd, q.hpMul, q.spMul);
+  }
+  // 修理
+  G.hp = Math.min(G.maxHp, G.hp + G.maxHp * st.regen * dt);
+  // 敵の動き
+  for (const e of G.enemies){
+    if (e.dead) continue;
+    e.flash = Math.max(0, e.flash - dt); e.rot += dt * (e.kind === 'runner' ? 4 : 1.2);
+    const dist = Math.hypot(e.x, e.y);
+    let sp = e.sp * (dist < st.range ? 1 - st.slow : 1);
+    const stopAt = e.d.ranged ? e.d.ranged.dist : 0;
+    if (dist > stopAt + .5){
+      const mv = Math.min(sp * dt, dist - stopAt);
+      e.x -= e.x / dist * mv; e.y -= e.y / dist * mv;
+    }
+    if (e.d.ranged && dist <= stopAt + 1){
+      e.cd -= dt;
+      if (e.cd <= 0){ e.cd = e.d.ranged.cd; G.ebullets.push({x:e.x, y:e.y, vx:-e.x / dist * 45, vy:-e.y / dist * 45, dmg:e.d.ranged.dmg * (e.hpMul > 1.4 ? 1.3 : 1)}); }
+    }
+    if (e.d.heal){
+      e.hcd = (e.hcd || 0) - dt;
+      for (const o of G.enemies) if (o !== e && !o.dead && o.hp < o.max && Math.hypot(o.x - e.x, o.y - e.y) < e.d.heal.r) o.hp = Math.min(o.max, o.hp + e.d.heal.ps * e.hpMul * dt);
+      if (e.hcd <= 0){ e.hcd = 1.2; G.rings.push({x:e.x, y:e.y, r:2, max:e.d.heal.r, col:'#ff6bcb', t:0, thin:1}); }
+    }
+    if (e.d.spawn){
+      e.scd -= dt;
+      if (e.scd <= 0){ e.scd = e.d.spawn.t; for (let i = 0; i < 2; i++){ const a = R() * 6.28; addEnemy(e.d.spawn.kind, e.x + Math.cos(a) * 12, e.y + Math.sin(a) * 12, e.hpMul, e.spMul); } }
+    }
+    // 砲台にぶつかる
+    if (dist <= CORE_R + e.r){
+      e.dead = true; hurt(e.d.dmg * (e.kind === 'boss' ? 1 : Math.sqrt(e.hpMul)));
+      burst(e.x, e.y, e.d.col, 8);
+    }
+  }
+  // 敵の弾
+  for (const b of G.ebullets){
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (Math.hypot(b.x, b.y) < CORE_R + 1){ b.dead = true; hurt(b.dmg); }
+  }
+  // 砲台
+  G.cd -= dt;
+  const inRange = G.enemies.filter(e => !e.dead && Math.hypot(e.x, e.y) <= st.range + e.r);
+  if (inRange.length){
+    inRange.sort((a, b) => (a.x*a.x + a.y*a.y) - (b.x*b.x + b.y*b.y));
+    const tgt = inRange[0];
+    const want = Math.atan2(tgt.y, tgt.x);
+    let da = ((want - G.angle + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+    G.angle += clamp(da, -12 * dt, 12 * dt);
+    if (G.cd <= 0){
+      G.cd = 1 / st.rate;
+      for (let k = 0; k < st.multi; k++){
+        const t = inRange[k % inRange.length];
+        // 少し先を狙う
+        const dd = Math.hypot(t.x, t.y), lead = dd / 170, ms = t.sp;
+        const tx = t.x - t.x / dd * ms * lead, ty = t.y - t.y / dd * ms * lead;
+        let a = Math.atan2(ty, tx); if (k >= inRange.length) a += (k - inRange.length + 1) * .12;
+        const crit = R() < st.crit;
+        G.bullets.push({x:Math.cos(a) * 10, y:Math.sin(a) * 10, vx:Math.cos(a) * 170, vy:Math.sin(a) * 170, dmg:st.dmg * (crit ? 3 : 1), crit, pierce:st.pierce, hit:new Set(), life:1.6});
+      }
+      S.shot();
+    }
+  }
+  // 自分の弾
+  for (const b of G.bullets){
+    b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
+    if (b.life <= 0){ b.dead = true; continue; }
+    for (const e of G.enemies){
+      if (e.dead || b.hit.has(e)) continue;
+      const rr = e.r + 1.5;
+      if (Math.abs(e.x - b.x) < rr && Math.abs(e.y - b.y) < rr && Math.hypot(e.x - b.x, e.y - b.y) < rr){
+        b.hit.add(e); damage(e, b.dmg, b.crit);
+        if (st.blast){
+          G.rings.push({x:b.x, y:b.y, r:1, max:st.blast, col:'#ff9f43', t:0});
+          for (const o of G.enemies) if (o !== e && !o.dead && Math.hypot(o.x - b.x, o.y - b.y) < st.blast + o.r) damage(o, b.dmg * .5);
+        }
+        burst(b.x, b.y, b.crit ? '#ffd23f' : '#9fd0ff', 3, .6);
+        if (b.pierce-- <= 0){ b.dead = true; break; }
+      }
+    }
+  }
+  // ドローン
+  G.dronePh += dt * 2.4;
+  for (let i = 0; i < st.drones; i++){
+    const a = G.dronePh + i * Math.PI * 2 / st.drones, dx = Math.cos(a) * 24, dy = Math.sin(a) * 24;
+    for (const e of G.enemies){
+      if (e.dead) continue;
+      if (Math.hypot(e.x - dx, e.y - dy) < e.r + 3.5 && (e.dcd || 0) <= 0){ e.dcd = .35; damage(e, st.dmg * .8); burst(dx, dy, '#7ee0ff', 3, .5); }
+    }
+  }
+  for (const e of G.enemies) if (e.dcd > 0) e.dcd -= dt;
+  G.novaCd = Math.max(0, G.novaCd - dt);
+  G.enemies = G.enemies.filter(e => !e.dead);
+  G.bullets = G.bullets.filter(b => !b.dead);
+  G.ebullets = G.ebullets.filter(b => !b.dead);
+  tickFx(dt);
+  // ウェーブ終了
+  if (!G.queue.length && !G.enemies.length && G.running && !G.over) waveClear();
+}
+function tickFx(dt){
+  for (const p of G.parts){ p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= .92; p.vy *= .92; }
+  G.parts = G.parts.filter(p => p.t < p.life);
+  for (const t of G.texts){ t.t += dt; t.y -= 12 * dt; }
+  G.texts = G.texts.filter(t => t.t < .8);
+  for (const r of G.rings){ r.t += dt; r.r += (r.max - r.r) * Math.min(1, dt * 9); }
+  G.rings = G.rings.filter(r => r.t < .45);
+  G.shake = Math.max(0, G.shake - dt * 2.5);
+}
+function hurt(d){
+  if (G.over) return;
+  G.hp -= d; G.shake = Math.min(1, G.shake + .35); S.hurt();
+  if (G.hp <= 0){ G.hp = 0; gameOver(); }
+}
+function nova(){
+  const st = stats(); if (!st.novaDmg || G.novaCd > 0 || !G.running) return;
+  G.novaCd = st.novaCd; S.nova(); G.shake = .8;
+  const r = st.range * 1.25;
+  G.rings.push({x:0, y:0, r:CORE_R, max:r, col:'#ffd23f', t:0, big:1});
+  for (const e of G.enemies) if (!e.dead && Math.hypot(e.x, e.y) < r + e.r) damage(e, st.novaDmg * (e.kind === 'boss' ? .6 : 1), true);
+  G.ebullets = [];
+}
+$('nova').onclick = nova;
+
+// ================= ウェーブの終わり・ゲームの終わり =================
+function waveClear(){
+  G.running = false;
+  const bonus = 25 + 10 * G.wave; G.money += bonus; S.clear();
+  banner(`WAVE ${G.wave} クリア！`, `ボーナス +${bonus}`);
+  renderShop(); hud();
+  setTimeout(() => {
+    if (G.over) return;
+    if (G.wave >= MAXW){ finishDefense(true); return; }
+    if (mode === '1p') nextWave1p();
+    else passTo(atkName(), `WAVE ${G.wave} は守られた！<br><b>${atkName()}</b>、次の作戦を考えよう。`, () => openPlan());
+  }, 1600);
+}
+function gameOver(){
+  G.over = true; G.running = false; S.over();
+  burst(0, 0, '#4da3ff', 80, 2.5); G.shake = 1.5;
+  banner('DESTROYED', `WAVE ${G.wave} で砲台がこわれた…`);
+  setTimeout(() => finishDefense(false), 2200);
+}
+function finishDefense(cleared){
+  const survived = cleared ? G.wave : G.wave - 1, hpPct = cleared ? Math.round(G.hp / G.maxHp * 100) : 0;
+  if (mode === '1p'){
+    const b = store.get('best', null), cur = {wave:G.wave, clear:cleared, kills:G.kills};
+    if (!b || cur.wave > b.wave || (cur.wave === b.wave && cur.kills > b.kills) || (cleared && !b.clear)) store.set('best', cur);
+    $('rsH').textContent = cleared ? '🏆 全ウェーブ防衛成功！' : `WAVE ${G.wave} で陥落`;
+    $('rsS').innerHTML = `<div class="pc ${cleared ? 'win' : ''}"><b>${survived} / ${MAXW} ウェーブ</b><span>撃破 ${G.kills}体<br>のこりHP ${hpPct}%</span></div>`;
+    $('rsN').textContent = cleared ? 'おみごと！' : '強化の順番を変えると、もっと先まで行けるかも。';
+    show('res'); showBest(); return;
+  }
+  M.res[M.round] = {def:defName(), survived, hpPct, kills:G.kills};
+  if (M.round === 0){
+    M.round = 1; G = newDefense();
+    passTo(atkName(), `攻守交代！ ${M.res[0].def} は <b>${survived}ウェーブ</b> 守った（HP ${hpPct}%）。<br>こんどは <b>${atkName()}</b> が攻める番。`, () => openPlan());
+    show('pass');
+    return;
+  }
+  const [a, b] = M.res, sa = a.survived * 1000 + a.hpPct, sb = b.survived * 1000 + b.hpPct;
+  const win = sa === sb ? -1 : sa > sb ? 0 : 1;
+  $('rsH').textContent = win < 0 ? '引き分け！' : `🏆 ${M.res[win].def} の勝ち！`;
+  $('rsS').innerHTML = M.res.map((r, i) => `<div class="pc ${win === i ? 'win' : ''}"><b>${r.def}</b><span>守ったウェーブ ${r.survived}/5<br>のこりHP ${r.hpPct}%<br>撃破 ${r.kills}体</span></div>`).join('');
+  $('rsN').textContent = '守ったウェーブ数 → のこりHP の順でくらべます';
+  show('res');
+}
+$('rsAgain').onclick = () => { if (mode === '1p') $('b1p').onclick(); else { M = {names:M.names, round:0, res:[]}; startRound(); } };
+$('rsTop').onclick = () => show('title');
+let quitT = 0;
+$('hQuit').onclick = () => {
+  if (performance.now() - quitT < 2500){ G.running = false; G.over = true; show('title'); return; }
+  quitT = performance.now(); banner('', 'もう一度 ✕ を押すとタイトルにもどります');
+};
+let speed = 1;
+$('hSpeed').onclick = () => { speed = speed === 1 ? 2 : speed === 2 ? 3 : 1; $('hSpeed').textContent = `▶ ×${speed}`; };
+
+// ================= 強化ボタン =================
+function renderShop(){
+  $('shop').innerHTML = UPG.map(u => {
+    const lv = G.lv[u.id], mx = lv >= u.max, c = cost(u);
+    return `<button class="ub ${mx ? 'max' : G.money >= c ? 'can' : ''}" data-id="${u.id}" ${!mx && G.money < c ? 'disabled' : ''}>
+      <span class="ic">${u.ic}</span><span class="nm">${u.n}</span><span class="lv">Lv ${lv}${mx ? ' MAX' : ''}</span><span class="c">${mx ? '—' : c}</span></button>`;
+  }).join('');
+  $('shop').querySelectorAll('.ub').forEach(b => b.onclick = () => buy(b.dataset.id));
+}
+function buy(id){
+  const u = UPG.find(q => q.id === id), c = cost(u);
+  if (G.over || G.lv[id] >= u.max || G.money < c) return;
+  G.money -= c; G.lv[id]++; S.buy();
+  if (id === 'hp'){ const old = G.maxHp; G.maxHp = Math.round(100 * Math.pow(1.22, G.lv.hp)); G.hp = Math.min(G.maxHp, G.hp + (G.maxHp - old) + G.maxHp * .1); }
+  burst(0, 0, '#4da3ff', 14, .8);
+  renderShop(); hud();
+}
+let shopSig = '';
+function hud(){
+  $('hWave').textContent = `WAVE ${Math.max(1, G.wave + (G.running ? 0 : 1))} / ${MAXW}`;
+  $('hMoney').textContent = `💰 ${Math.floor(G.money)}`;
+  const st = stats();
+  $('nova').classList.toggle('on', st.novaDmg > 0);
+  $('nova').disabled = G.novaCd > 0 || !G.running;
+  $('novaT').textContent = G.novaCd > 0 ? Math.ceil(G.novaCd) + '秒' : 'ノヴァ';
+  // 買えるようになったら更新
+  const sig = UPG.map(u => (G.money >= cost(u) ? 1 : 0) + ':' + G.lv[u.id]).join(',');
+  if (sig !== shopSig){ shopSig = sig; renderShop(); }
+}
+
+// ================= 描く =================
+function poly(x, y, r, n, rot){ ctx.beginPath(); for (let i = 0; i < n; i++){ const a = rot + i * Math.PI * 2 / n; ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } ctx.closePath(); }
+function neon(col, w){ ctx.strokeStyle = col; ctx.globalAlpha = .25; ctx.lineWidth = w * 3; ctx.stroke(); ctx.globalAlpha = 1; ctx.lineWidth = w; ctx.stroke(); }
+function shapePath(e, x, y, r){
+  switch (e.d.shape){
+    case 'tri': poly(x, y, r * 1.2, 3, e.rot); break;
+    case 'dia': poly(x, y, r * 1.2, 4, e.rot * .5); break;
+    case 'circ': ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); break;
+    case 'cross': ctx.beginPath(); const k = r * .4; ctx.rect(x - k, y - r, k * 2, r * 2); ctx.rect(x - r, y - k, r * 2, k * 2); break;
+    case 'boss': poly(x, y, r, 8, e.rot * .3); break;
+    default: ctx.beginPath(); ctx.rect(x - r, y - r, r * 2, r * 2);
+  }
+}
+function draw(){
+  const st = stats();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (gridCv) ctx.drawImage(gridCv, 0, 0, W, H);
+  const sh = G.shake * 6;
+  ctx.save(); ctx.translate(W/2 + (R() - .5) * sh, H/2 + (R() - .5) * sh); ctx.scale(U, U);
+  // 射程
+  ctx.beginPath(); ctx.arc(0, 0, st.range, 0, Math.PI * 2);
+  ctx.fillStyle = st.slow ? 'rgba(120,200,255,.07)' : 'rgba(47,139,255,.05)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(77,163,255,.35)'; ctx.lineWidth = .5; ctx.stroke();
+  // 敵
+  for (const e of G.enemies){
+    const fl = e.flash > 0;
+    shapePath(e, e.x, e.y, e.r);
+    ctx.fillStyle = fl ? 'rgba(255,255,255,.6)' : 'rgba(0,0,0,.25)'; ctx.fill();
+    neon(fl ? '#fff' : e.d.col, e.kind === 'boss' ? 1.4 : .7);
+    if (e.kind === 'tank' || e.kind === 'boss' || e.hp < e.max){
+      if (e.hp < e.max || e.kind === 'boss'){
+        const w = e.r * 2.2; ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(e.x - w/2, e.y - e.r - 3.5, w, 1.4);
+        ctx.fillStyle = e.kind === 'boss' ? '#ff4757' : '#7ee0a0'; ctx.fillRect(e.x - w/2, e.y - e.r - 3.5, w * clamp(e.hp / e.max, 0, 1), 1.4);
+      }
+    }
+  }
+  // 敵の弾
+  ctx.fillStyle = '#ff9f43';
+  for (const b of G.ebullets){ ctx.beginPath(); ctx.arc(b.x, b.y, 1.4, 0, Math.PI * 2); ctx.fill(); }
+  // 弾
+  ctx.lineCap = 'round';
+  for (const b of G.bullets){
+    ctx.strokeStyle = b.crit ? '#ffd23f' : '#bfe3ff'; ctx.lineWidth = b.crit ? 1.6 : 1;
+    ctx.beginPath(); ctx.moveTo(b.x - b.vx * .025, b.y - b.vy * .025); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  // 輪
+  for (const r of G.rings){
+    ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+    ctx.globalAlpha = 1 - r.t / .45; ctx.strokeStyle = r.col; ctx.lineWidth = r.big ? 3 : r.thin ? .5 : 1; ctx.stroke();
+    if (r.big){ ctx.fillStyle = 'rgba(255,210,63,.12)'; ctx.fill(); }
+    ctx.globalAlpha = 1;
+  }
+  // ドローン
+  for (let i = 0; i < st.drones; i++){
+    const a = G.dronePh + i * Math.PI * 2 / st.drones, x = Math.cos(a) * 24, y = Math.sin(a) * 24;
+    poly(x, y, 3, 3, a * 3); ctx.fillStyle = 'rgba(126,224,255,.3)'; ctx.fill(); neon('#7ee0ff', .6);
+  }
+  // 砲台
+  const hpR = G.hp / G.maxHp;
+  poly(0, 0, CORE_R, 6, Math.PI / 6); ctx.fillStyle = '#0d1b36'; ctx.fill(); neon(hpR > .3 ? '#4da3ff' : '#ff4d6d', 1.1);
+  poly(0, 0, CORE_R * .55, 6, Math.PI / 6 + G.t * .5); ctx.strokeStyle = 'rgba(77,163,255,.5)'; ctx.lineWidth = .5; ctx.stroke();
+  ctx.save(); ctx.rotate(G.angle);
+  const barrels = Math.min(3, st.multi);
+  for (let i = 0; i < barrels; i++){ const o = (i - (barrels - 1) / 2) * 2.4; ctx.fillStyle = '#e8f1ff'; ctx.fillRect(3, o - 1, 9 + G.lv.dmg * .2, 2); }
+  ctx.restore();
+  // HPバー
+  const bw = 26; ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(-bw/2, -CORE_R - 7, bw, 2.6);
+  ctx.fillStyle = hpR > .5 ? '#2ee59d' : hpR > .25 ? '#ffd23f' : '#ff4d6d'; ctx.fillRect(-bw/2, -CORE_R - 7, bw * hpR, 2.6);
+  // 粒
+  ctx.globalCompositeOperation = 'lighter';
+  for (const p of G.parts){ ctx.globalAlpha = 1 - p.t / p.life; ctx.fillStyle = p.col; ctx.fillRect(p.x - p.s/2, p.y - p.s/2, p.s, p.s); }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  // 数字
+  ctx.textAlign = 'center'; ctx.font = 'bold 5px sans-serif';
+  for (const t of G.texts){ ctx.globalAlpha = 1 - t.t / .8; ctx.fillStyle = t.col; ctx.font = `900 ${5 * t.sc}px sans-serif`; ctx.fillText(t.s, t.x, t.y); }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+  // 画面のふち（ダメージ）
+  if (G.shake > .3){ ctx.fillStyle = `rgba(255,40,70,${(G.shake - .3) * .25})`; ctx.fillRect(0, 0, W, H); }
+}
+
+let loopOn = false, last = 0, hudT = 0;
+function loop(now){
+  if (!$('game').classList.contains('on')){ loopOn = false; return; }
+  let dt = Math.min(.05, (now - last) / 1000); last = now;
+  for (let i = 0; i < speed; i++) step(dt);
+  draw();
+  hudT -= dt; if (hudT <= 0){ hudT = .15; hud(); }
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
